@@ -131,12 +131,12 @@ if indice < len(PREGUNTAS):
 
                 # Capturar clic
                 if st.session_state.get("respuesta_submit") is None:
-                    respuesta = st.experimental_get_query_params().get("respuesta")
+                    respuesta = st.query_params.get("respuesta")
                     if respuesta:
                         st.session_state.respuestas[clave] = respuesta[0]
                         st.session_state.indice += 1
                         st.session_state.respuesta_submit = True
-                        st.experimental_set_query_params()  # Limpiar la URL
+                        st.query_params.clear()
                         st.rerun()
 
 
