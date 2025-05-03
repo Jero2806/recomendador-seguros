@@ -47,6 +47,21 @@ PREGUNTAS = [
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.title("🛡️ Encuentra tu seguro ideal")
 
+# Cambiar el fondo a azul celeste
+st.markdown(
+    """
+    <style>
+        body {
+            background-color: #cce6ff;
+        }
+        .stApp {
+            background-color: #cce6ff;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Inicializar estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
