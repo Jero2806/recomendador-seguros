@@ -7,6 +7,7 @@ from PIL import Image
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
+# Lista de preguntas
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -43,54 +44,48 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Diccionario para almacenar respuestas
-respuestas = {}
+# Inicializar respuestas
+if "respuestas" not in st.session_state:
+    st.session_state.respuestas = {}
 
-st.set_page_config(page_title="Recomendador de Seguros", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.image("logo_global.png", width=150)
 st.image("recomendacion.png", width=100)
-
 st.title("¡Encuentra tu seguro ideal! 🛡️")
 
+# Mostrar formulario paso a paso
 for clave, texto, opciones in PREGUNTAS:
-    st.markdown(f"### {texto}")
-    if len(opciones) <= 5:
-        cols = st.columns(len(opciones))
-        seleccion = None
-        for i, op in enumerate(opciones):
-            icon_path = f"icon_{op.lower().replace(' ', '_')}.png"
-            with cols[i]:
-                if st.button(op, key=f"{clave}_{op}"):
-                    seleccion = op
-                    respuestas[clave] = seleccion
-        if clave not in respuestas:
-            st.warning("Selecciona una opción antes de continuar.")
-            st.stop()
-    else:
-        respuesta = st.selectbox("Selecciona una opción:", opciones, key=clave)
-        respuestas[clave] = respuesta
+    if clave not in st.session_state.respuestas:
+        st.markdown(f"### {texto}")
+        if len(opciones) <= 5:
+            seleccion = st.radio("Selecciona una opción:", opciones, key=clave)
+        else:
+            seleccion = st.selectbox("Selecciona una opción:", opciones, key=clave)
+        st.session_state.respuestas[clave] = seleccion
+        st.stop()  # Esperar a que el usuario responda antes de continuar
 
-# Procesamiento especial para edad e ingresos
-if "edad" in respuestas:
-    try:
-        inicio, fin = map(int, respuestas["edad"].split("-"))
-        respuestas["edad"] = (inicio + fin) // 2
-    except:
-        respuestas["edad"] = 30
+# Procesamiento especial
+try:
+    if "edad" in st.session_state.respuestas:
+        inicio, fin = map(int, st.session_state.respuestas["edad"].split("-"))
+        st.session_state.respuestas["edad"] = (inicio + fin) // 2
+except:
+    st.session_state.respuestas["edad"] = 30
 
 mapa_ingresos = {
     "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
     "4-6M": 5_000_000, "6-8M": 7_000_000,
     "8-10M": 9_000_000, ">10M": 12_000_000
 }
-if "ingresos_mensuales" in respuestas:
-    respuestas["ingresos_mensuales"] = mapa_ingresos.get(
-        respuestas["ingresos_mensuales"], 3_000_000
+if "ingresos_mensuales" in st.session_state.respuestas:
+    st.session_state.respuestas["ingresos_mensuales"] = mapa_ingresos.get(
+        st.session_state.respuestas["ingresos_mensuales"], 3_000_000
     )
 
 # Botón de predicción
-if st.button("📊 Obtener recomendación"):
-    df_usuario = pd.DataFrame([respuestas])
+st.markdown("## 🎯 ¡Listo! Obtén tu recomendación")
+if st.button("Obtener seguro recomendado"):
+    df_usuario = pd.DataFrame([st.session_state.respuestas])
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
