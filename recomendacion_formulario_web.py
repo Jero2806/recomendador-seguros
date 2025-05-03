@@ -117,21 +117,21 @@ if indice < len(PREGUNTAS):
                 img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
                 img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
 
-                # Botón visual (todo el contenido)
-                clicked = st.button(
-                    label=f"""
-                        <div class="tarjeta-opcion">
-                            <img src="{img_b64}" class="tarjeta-imagen"/>
-                            <div style='color:#003366; font-weight:bold'>{op}</div>
-                        </div>
-                    """,
-                    key=f"{clave}_{op}",
-                    help=op
-                )
-                if clicked:
+                boton_key = f"{clave}_{op}"
+
+                # Botón invisible (para detección de clic)
+                if st.button("", key=boton_key, help=op):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
                     st.rerun()
+
+                # Botón visual que activa el botón invisible
+                st.markdown(f"""
+                    <div class="tarjeta-opcion" onclick="document.getElementById('{boton_key}').click()">
+                        <img src="{img_b64}" class="tarjeta-imagen"/>
+                        <div style='color:#003366; font-weight:bold'>{op}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
     st.progress(indice / len(PREGUNTAS))
 
