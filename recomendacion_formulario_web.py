@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import joblib
@@ -8,13 +9,60 @@ import base64
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Función para codificar imagen como base64
+# Codificar imagen a base64
 def imagen_base64(path):
     with open(path, "rb") as img_file:
         return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
 
+# Configurar estilo
+st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: #cce6ff;
+        }
+        h1 {
+            color: #003366 !important;
+        }
+        h3 {
+            color: #003366 !important;
+        }
+        .tarjeta-opcion {
+            border: 2px solid #003366;
+            border-radius: 12px;
+            background-color: white;
+            padding: 10px;
+            text-align: center;
+            transition: 0.2s;
+            height: 130px;
+        }
+        .tarjeta-opcion:hover {
+            background-color: #e6f0ff;
+        }
+        .tarjeta-imagen {
+            width: 40px;
+            height: auto;
+            margin-bottom: 5px;
+        }
+        .stButton > button {
+            background: none;
+            border: none;
+            padding: 0;
+            width: 100%;
+        }
+        .stProgress > div > div > div > div {
+            background-color: #005bbb;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-# Preguntas
+st.title("🛡️ Encuentra tu seguro ideal")
+
+# Estado
+if "indice" not in st.session_state:
+    st.session_state.indice = 0
+    st.session_state.respuestas = {}
+
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -51,91 +99,30 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Estilos
-st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
-st.markdown("""
-    <style>
-        .stApp {
-            background-color: #cce6ff;
-        }
-        h1, .stMarkdown h1 {
-            color: #003366 !important;
-            font-weight: 800;
-        }
-        h3, .stMarkdown h3 {
-            color: #003366 !important;
-            font-weight: 700;
-        }
-        .tarjeta-opcion {
-            border: 2px solid #003366;
-            border-radius: 12px;
-            background-color: white;
-            padding: 10px;
-            text-align: center;
-            transition: 0.2s;
-        }
-        .tarjeta-opcion:hover {
-            background-color: #e6f0ff;
-        }
-        .tarjeta-imagen {
-            width: 50px;
-            height: auto;
-            margin-bottom: 5px;
-        }
-        .stButton > button {
-            background: none;
-            border: none;
-            padding: 0;
-            width: 100%;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Título
-st.title("🛡️ Encuentra tu seguro ideal")
-
-# Estado
-if "indice" not in st.session_state:
-    st.session_state.indice = 0
-    st.session_state.respuestas = {}
-
 indice = st.session_state.indice
 
-# Mostrar pregunta
 if indice < len(PREGUNTAS):
     clave, pregunta, opciones = PREGUNTAS[indice]
     st.markdown(f"### {pregunta}")
-
-    MAX_COLS = 5
-    filas = [opciones[i:i + MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
-
-    for fila in filas:
-        cols = st.columns(len(fila))
-        for i, op in enumerate(fila):
-            with cols[i]:
-                # Imagen asociada
-                img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
-                img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
-
-                boton_key = f"{clave}_{op}"
-
-                # Botón invisible (para detección de clic)
-                if st.button("", key=boton_key, help=op):
-                    st.session_state.respuestas[clave] = op
-                    st.session_state.indice += 1
-                    st.rerun()
-
-                # Botón visual que activa el botón invisible
-                st.markdown(f"""
-                    <div class="tarjeta-opcion" onclick="document.getElementById('{boton_key}').click()">
-                        <img src="{img_b64}" class="tarjeta-imagen"/>
-                        <div style='color:#003366; font-weight:bold'>{op}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+    cols = st.columns(len(opciones))
+    for i, op in enumerate(opciones):
+        with cols[i]:
+            img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
+            img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
+            html = f"""
+            <div class="tarjeta-opcion">
+                <img src="{img_b64}" class="tarjeta-imagen"/>
+                <div style='color:#003366; font-weight:bold'>{op}</div>
+            </div>
+            """
+            if st.button(label="", key=f"{clave}_{op}"):
+                st.session_state.respuestas[clave] = op
+                st.session_state.indice += 1
+                st.rerun()
+            st.markdown(html, unsafe_allow_html=True)
 
     st.progress(indice / len(PREGUNTAS))
 
-# Mostrar resultado final
 else:
     respuestas = st.session_state.respuestas
 
@@ -145,6 +132,13 @@ else:
             respuestas["edad"] = (ini + fin) // 2
         except:
             respuestas["edad"] = 30
+
+    mapa_ingresos = {
+        "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
+        "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
+    }
+    if "ingresos_mensuales" in respuestas:
+        respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
 
