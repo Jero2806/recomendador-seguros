@@ -1,9 +1,6 @@
-# recomendacion_formulario_web.py adaptado a tarjetas visuales con iconos
-
 import streamlit as st
 import pandas as pd
 import joblib
-import base64
 from PIL import Image
 import os
 
@@ -11,13 +8,6 @@ import os
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Configuracion de la pagina
-st.set_page_config(page_title="Recomendador de Seguros", page_icon="🛡️", layout="centered")
-st.image("logo_global.png", width=150)
-st.image("recomendacion.png", width=100)
-st.title("\U0001F6E1️ Encuentra tu seguro ideal")
-
-# Preguntas
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -53,79 +43,68 @@ PREGUNTAS = [
     ("nivel_investigacion", "¿Cuánto investigas antes de comprar un seguro?", ["Nada", "Poco", "Regular", "Mucho"]),
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
+   
+   
+st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+st.title("\U0001F6E1\ufe0f Encuentra tu seguro ideal")
 
-# Función para codificar imágenes a base64
-def codificar_imagen(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-# Función para mostrar tarjetas
-
-def mostrar_tarjetas(clave, pregunta, opciones, seleccion_actual):
-    st.markdown(f"### {pregunta}")
-    cols = st.columns(len(opciones))
-    seleccion = seleccion_actual
-    for i, op in enumerate(opciones):
-        icono_path = f"icon_{op.lower().replace(' ', '_')}.png"
-        icono = codificar_imagen(icono_path)
-        color_borde = "#005BBB" if seleccion_actual == op else "#cccccc"
-        with cols[i]:
-            st.markdown(f"""
-                <div style='border:2px solid {color_borde}; border-radius:10px; padding:10px; text-align:center;'>
-                    <img src='data:image/png;base64,{icono}' width='60'><br>
-                    <strong style='color:white'>{op}</strong>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button(op, key=f"{clave}_{op}"):
-                seleccion = op
-    return seleccion
-
-# Estado de sesión para avanzar paso a paso
-if 'indice' not in st.session_state:
-    st.session_state.indice = 0
-if 'respuestas' not in st.session_state:
-    st.session_state.respuestas = {}
+if "indice" not in st.session_state:
+        st.session_state.indice = 0
+        st.session_state.respuestas = {}
 
 indice = st.session_state.indice
-clave, texto, opciones = PREGUNTAS[indice]
+clave, pregunta, opciones = PREGUNTAS[indice]
+st.markdown(f"### {pregunta}")
 
-# Mostrar barra de progreso
-st.progress((indice + 1) / len(PREGUNTAS))
+MAX_COLS = 5
+chunks = [opciones[i:i + MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
 
-# Mostrar pregunta
-respuesta_actual = st.session_state.respuestas.get(clave, None)
-respuesta = mostrar_tarjetas(clave, texto, opciones, respuesta_actual)
-if respuesta:
-    st.session_state.respuestas[clave] = respuesta
-
-    if st.button("Siguiente"):
-        if indice + 1 < len(PREGUNTAS):
-            st.session_state.indice += 1
-            st.rerun()
-        else:
-            # Procesamiento especial
-            r = st.session_state.respuestas
-            if "edad" in r:
+for fila in chunks:
+        cols = st.columns(len(fila))
+        for i, op in enumerate(fila):
+            with cols[i]:
+                icon_path = f"icon_{op.lower().replace(' ', '_')}.png"
                 try:
-                    ini, fin = map(int, r["edad"].split("-"))
-                    r["edad"] = (ini + fin) // 2
+                    st.image(icon_path, width=60)
                 except:
-                    r["edad"] = 30
+                    st.write("")
+                if st.button(op, key=f"{clave}_{op}"):
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
 
-            ingresos_map = {
-                "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
-                "4-6M": 5_000_000, "6-8M": 7_000_000,
-                "8-10M": 9_000_000, ">10M": 12_000_000
-            }
-            if "ingresos_mensuales" in r:
-                r["ingresos_mensuales"] = ingresos_map.get(r["ingresos_mensuales"], 3_000_000)
+    # Barra de progreso visual
+progreso = (indice / len(PREGUNTAS)) * 100
+st.progress(progreso / 100)
 
-            df_usuario = pd.DataFrame([r])
+    # Si ya respondió todo
+if indice >= len(PREGUNTAS):
+        respuestas = st.session_state.respuestas
+        # Procesar edad
+        if "edad" in respuestas:
             try:
-                pred = modelo.predict(df_usuario)
-                resultado = label_encoder.inverse_transform(pred)[0]
-                st.success(f"✅ Seguro recomendado: **{resultado}**")
-            except Exception as e:
-                st.error(f"❌ Error en la predicción: {str(e)}")
+                inicio, fin = map(int, respuestas["edad"].split("-"))
+                respuestas["edad"] = (inicio + fin) // 2
+            except:
+                respuestas["edad"] = 30
+
+    # Procesar ingresos
+mapa_ingresos = {
+        "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
+        "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
+    }
+if "ingresos_mensuales" in respuestas:
+        respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
+
+df_usuario = pd.DataFrame([respuestas])
+try:
+        pred = modelo.predict(df_usuario)
+        resultado = label_encoder.inverse_transform(pred)[0]
+        st.success(f"\U00002705 Seguro recomendado: **{resultado}**")
+except Exception as e:
+        st.error(f"Error en la predicción: {e}")
+
+if st.button("Volver a comenzar"):
+        st.session_state.indice = 0
+        st.session_state.respuestas = {}
+        st.rerun()
