@@ -8,7 +8,7 @@ import base64
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Función para codificar imagen como base64
+# Codificar imagen como base64
 def imagen_base64(path):
     with open(path, "rb") as img_file:
         return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
@@ -50,20 +50,15 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Configuración visual
+# Configurar estilo
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.markdown("""
     <style>
         .stApp {
             background-color: #cce6ff;
         }
-        h1, .stMarkdown h1 {
-            color: #003366 !important;
-            font-weight: 800;
-        }
-        h3, .stMarkdown h3 {
-            color: #003366 !important;
-            font-weight: 700;
+        h1, h3 {
+            color: #003366;
         }
         .tarjeta-opcion {
             border: 2px solid #003366;
@@ -71,9 +66,8 @@ st.markdown("""
             background-color: white;
             padding: 10px;
             text-align: center;
-            width: 100%;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: 0.2s;
         }
         .tarjeta-opcion:hover {
             background-color: #e6f0ff;
@@ -91,7 +85,7 @@ st.markdown("""
 
 st.title("🛡️ Encuentra tu seguro ideal")
 
-# Estado de la app
+# Estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
@@ -113,39 +107,28 @@ if indice < len(PREGUNTAS):
                 img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
                 boton_key = f"{clave}_{op}"
 
-                # Detectar si esta opción fue seleccionada antes
-                seleccionado = st.session_state.respuestas.get(clave) == op
+                # Botón oculto de Streamlit (real)
+                clicked = st.button("", key=boton_key, help=op)
 
-                # Crear botón visual que hace submit por JS
-                st.markdown(
-                    f"""
-                    <form action="" method="post">
-                        <button type="submit" name="respuesta" value="{op}" class="tarjeta-opcion" style="border: 2px solid {'#005bbb' if seleccionado else '#003366'};">
-                            <img src="{img_b64}" class="tarjeta-imagen"/>
-                            <div style='color:#003366; font-weight:bold'>{op}</div>
-                        </button>
-                    </form>
-                    """,
-                    unsafe_allow_html=True
-                )
+                # Botón visual estilizado (simula el clic)
+                st.markdown(f"""
+                    <div class="tarjeta-opcion" onclick="document.getElementById('{boton_key}').click()">
+                        <img src="{img_b64}" class="tarjeta-imagen"/>
+                        <div style='color:#003366; font-weight:bold'>{op}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-                # Capturar clic
-                if st.session_state.get("respuesta_submit") is None:
-                    respuesta = st.query_params.get("respuesta")
-                    if respuesta:
-                        st.session_state.respuestas[clave] = respuesta[0]
-                        st.session_state.indice += 1
-                        st.session_state.respuesta_submit = True
-                        st.query_params.clear()
-                        st.rerun()
-
+                if clicked:
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
 
     st.progress(indice / len(PREGUNTAS))
 
 else:
-    # Procesamiento final
     respuestas = st.session_state.respuestas
 
+    # Preprocesamiento
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
