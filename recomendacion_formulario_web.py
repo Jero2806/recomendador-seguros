@@ -45,7 +45,10 @@ PREGUNTAS = [
 ]
 
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
-st.title("🛡️ Encuentra tu seguro ideal")
+st.markdown(
+    '<h1 style="color:#003366; font-weight:800;">🛡️ Encuentra tu seguro ideal</h1>',
+    unsafe_allow_html=True
+)
 
 # Estilos personalizados
 st.markdown(
