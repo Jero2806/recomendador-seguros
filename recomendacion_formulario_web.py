@@ -109,7 +109,7 @@ if indice < len(PREGUNTAS):
             with cols[i]:
                 boton_html = f"""
                 <div class="tarjeta-opcion" onclick="document.getElementById('{clave}_{op}').click()">
-                    <img src="app/static/icon_{op.lower().replace(' ', '_')}.png" class="tarjeta-imagen" onerror="this.style.display='none';"/>
+                    <img src="icon_{op.lower().replace(' ', '_')}.png" class="tarjeta-imagen" onerror="this.style.display='none';"/>
                     <div>{op}</div>
                 </div>
                 """
