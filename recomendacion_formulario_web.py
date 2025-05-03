@@ -103,7 +103,7 @@ if respuesta:
     if st.button("Siguiente"):
         if indice + 1 < len(PREGUNTAS):
             st.session_state.indice += 1
-            st.experimental_rerun()
+            st.rerun()
         else:
             # Procesamiento especial
             r = st.session_state.respuestas
