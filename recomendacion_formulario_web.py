@@ -59,6 +59,7 @@ st.markdown(
         /* Título */
         h1 {
             color: #003366;
+            font-weight: 800;
         }
 
         /* Texto de las preguntas */
