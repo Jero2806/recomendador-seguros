@@ -3,7 +3,14 @@ import pandas as pd
 import joblib
 from PIL import Image
 import os
+import base64
 
+
+# Función para convertir imagen a base64
+def imagen_base64(path):
+    with open(path, "rb") as img_file:
+        encoded = base64.b64encode(img_file.read()).decode()
+    return f"data:image/png;base64,{encoded}"
 
 # Cargar modelo y encoder
 modelo = joblib.load("modelo_regresion_logistica.pkl")
@@ -107,9 +114,15 @@ if indice < len(PREGUNTAS):
         cols = st.columns(len(fila))
         for i, op in enumerate(fila):
             with cols[i]:
+                img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
+                if os.path.exists(img_path):
+                    img_b64 = imagen_base64(img_path)
+                else:
+                    img_b64 = ""  # fallback
+
                 boton_html = f"""
                 <div class="tarjeta-opcion" onclick="document.getElementById('{clave}_{op}').click()">
-                    <img src="static/icon_{op.lower().replace(' ', '_')}.png" class="tarjeta-imagen" onerror="this.style.display='none';"/>
+                    <img src="{img_b64}" class="tarjeta-imagen" />
                     <div>{op}</div>
                 </div>
                 """
