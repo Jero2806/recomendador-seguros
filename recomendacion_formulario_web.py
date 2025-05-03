@@ -109,29 +109,35 @@ if indice < len(PREGUNTAS):
         cols = st.columns(len(fila))
         for i, op in enumerate(fila):
             with cols[i]:
-                    img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
-                    img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
-                    # ID único por opción
-                    boton_key = f"{clave}_{op}"
-                    # Si el botón es clicado (simulado con markdown como un link que recarga)
-                    if st.button(
-                        "",
-                        key=boton_key,
-                        help=op
-                    ):
-                        st.session_state.respuestas[clave] = op
-                        st.session_state.indice += 1
-                        st.rerun()
-                    # Botón visual personalizado
-                    st.markdown(
-                        f"""
-                        <div class="tarjeta-opcion" onclick="document.getElementById('{boton_key}').click()">
+                img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
+                img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
+                boton_key = f"{clave}_{op}"
+
+                # Detectar si esta opción fue seleccionada antes
+                seleccionado = st.session_state.respuestas.get(clave) == op
+
+                # Crear botón visual que hace submit por JS
+                st.markdown(
+                    f"""
+                    <form action="" method="post">
+                        <button type="submit" name="respuesta" value="{op}" class="tarjeta-opcion" style="border: 2px solid {'#005bbb' if seleccionado else '#003366'};">
                             <img src="{img_b64}" class="tarjeta-imagen"/>
                             <div style='color:#003366; font-weight:bold'>{op}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                        </button>
+                    </form>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                # Capturar clic
+                if st.session_state.get("respuesta_submit") is None:
+                    respuesta = st.experimental_get_query_params().get("respuesta")
+                    if respuesta:
+                        st.session_state.respuestas[clave] = respuesta[0]
+                        st.session_state.indice += 1
+                        st.session_state.respuesta_submit = True
+                        st.experimental_set_query_params()  # Limpiar la URL
+                        st.rerun()
 
 
     st.progress(indice / len(PREGUNTAS))
