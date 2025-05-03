@@ -44,51 +44,52 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Inicializar respuestas
-if "respuestas" not in st.session_state:
+# Inicializar estado
+if "indice" not in st.session_state:
+    st.session_state.indice = 0
     st.session_state.respuestas = {}
 
-st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
-st.image("logo_global.png", width=150)
-st.image("recomendacion.png", width=100)
+total_preguntas = len(PREGUNTAS)
+
 st.title("¡Encuentra tu seguro ideal! 🛡️")
 
-# Mostrar formulario paso a paso
-for clave, texto, opciones in PREGUNTAS:
-    if clave not in st.session_state.respuestas:
-        st.markdown(f"### {texto}")
-        if len(opciones) <= 5:
-            seleccion = st.radio("Selecciona una opción:", opciones, key=clave)
-        else:
-            seleccion = st.selectbox("Selecciona una opción:", opciones, key=clave)
-        st.session_state.respuestas[clave] = seleccion
-        st.stop()  # Esperar a que el usuario responda antes de continuar
+# Barra de progreso
+progreso = (st.session_state.indice + 1) / total_preguntas
+st.progress(progreso)
 
-# Procesamiento especial
-try:
-    if "edad" in st.session_state.respuestas:
-        inicio, fin = map(int, st.session_state.respuestas["edad"].split("-"))
-        st.session_state.respuestas["edad"] = (inicio + fin) // 2
-except:
-    st.session_state.respuestas["edad"] = 30
+# Mostrar pregunta actual
+clave, texto, opciones = PREGUNTAS[st.session_state.indice]
+st.subheader(texto)
 
-mapa_ingresos = {
-    "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
-    "4-6M": 5_000_000, "6-8M": 7_000_000,
-    "8-10M": 9_000_000, ">10M": 12_000_000
-}
-if "ingresos_mensuales" in st.session_state.respuestas:
-    st.session_state.respuestas["ingresos_mensuales"] = mapa_ingresos.get(
-        st.session_state.respuestas["ingresos_mensuales"], 3_000_000
-    )
+respuesta = st.radio("Selecciona una opción:", opciones, key=clave)
 
-# Botón de predicción
-st.markdown("## 🎯 ¡Listo! Obtén tu recomendación")
-if st.button("Obtener seguro recomendado"):
-    df_usuario = pd.DataFrame([st.session_state.respuestas])
-    try:
-        pred = modelo.predict(df_usuario)
-        resultado = label_encoder.inverse_transform(pred)[0]
-        st.success(f"✅ Seguro recomendado: **{resultado}**")
-    except Exception as e:
-        st.error(f"❌ Error en la predicción: {str(e)}")
+if st.button("Siguiente"):
+    st.session_state.respuestas[clave] = respuesta
+    st.session_state.indice += 1
+
+    if st.session_state.indice >= total_preguntas:
+        # Procesar respuestas antes de predecir
+        respuestas = st.session_state.respuestas
+
+        # Convertir edad a número
+        if "edad" in respuestas:
+            try:
+                ini, fin = map(int, respuestas["edad"].split("-"))
+                respuestas["edad"] = (ini + fin) // 2
+            except:
+                respuestas["edad"] = 30
+
+        df_usuario = pd.DataFrame([respuestas])
+
+        try:
+            pred = modelo.predict(df_usuario)
+            resultado = label_encoder.inverse_transform(pred)[0]
+            st.success(f"✅ Seguro recomendado: **{resultado}**")
+        except Exception as e:
+            st.error(f"❌ Error en la predicción: {str(e)}")
+
+        st.session_state.indice = 0
+        st.session_state.respuestas = {}
+        st.stop()
+
+    st.rerun()
