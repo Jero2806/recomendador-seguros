@@ -47,21 +47,53 @@ PREGUNTAS = [
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.title("🛡️ Encuentra tu seguro ideal")
 
-# Cambiar el fondo a azul celeste
+# Estilos personalizados
 st.markdown(
     """
     <style>
-        body {
+        /* Fondo general */
+        body, .stApp {
             background-color: #cce6ff;
         }
-        .stApp {
-            background-color: #cce6ff;
+
+        /* Título */
+        h1 {
+            color: #003366;
+        }
+
+        /* Texto de las preguntas */
+        h3 {
+            color: #003366;
+        }
+
+        /* Botones (cuadros de selección) */
+        button[kind="secondary"] {
+            background-color: white !important;
+            color: black !important;
+            border: 2px solid #003366 !important;
+            border-radius: 10px !important;
+            padding: 0.5em 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        button[kind="secondary"]:hover {
+            background-color: #e6f0ff !important;
+        }
+
+        /* Botón activo (ya seleccionado) */
+        button:focus:not(:active) {
+            background-color: #005bbb !important;
+            color: white !important;
+        }
+
+        /* Estilo de barra de progreso */
+        .stProgress > div > div > div > div {
+            background-color: #005bbb;
         }
     </style>
     """,
     unsafe_allow_html=True
 )
-
 # Inicializar estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
