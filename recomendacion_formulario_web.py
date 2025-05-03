@@ -43,68 +43,71 @@ PREGUNTAS = [
     ("nivel_investigacion", "¿Cuánto investigas antes de comprar un seguro?", ["Nada", "Poco", "Regular", "Mucho"]),
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
-   
-   
-st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
-st.title("\U0001F6E1\ufe0f Encuentra tu seguro ideal")
 
+st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+st.title("🛡️ Encuentra tu seguro ideal")
+
+# Inicializar estado
 if "indice" not in st.session_state:
-        st.session_state.indice = 0
-        st.session_state.respuestas = {}
+    st.session_state.indice = 0
+    st.session_state.respuestas = {}
 
 indice = st.session_state.indice
-clave, pregunta, opciones = PREGUNTAS[indice]
-st.markdown(f"### {pregunta}")
 
-MAX_COLS = 5
-chunks = [opciones[i:i + MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
+# Preguntas restantes
+if indice < len(PREGUNTAS):
+    clave, pregunta, opciones = PREGUNTAS[indice]
+    st.markdown(f"### {pregunta}")
 
-for fila in chunks:
+    MAX_COLS = 5
+    filas = [opciones[i:i + MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
+    for fila in filas:
         cols = st.columns(len(fila))
         for i, op in enumerate(fila):
             with cols[i]:
                 icon_path = f"icon_{op.lower().replace(' ', '_')}.png"
-                try:
+                if os.path.exists(icon_path):
                     st.image(icon_path, width=60)
-                except:
-                    st.write("")
                 if st.button(op, key=f"{clave}_{op}"):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
                     st.rerun()
 
-    # Barra de progreso visual
-progreso = (indice / len(PREGUNTAS)) * 100
-st.progress(progreso / 100)
+    st.progress(indice / len(PREGUNTAS))
 
-    # Si ya respondió todo
-if indice >= len(PREGUNTAS):
-        respuestas = st.session_state.respuestas
-        # Procesar edad
-        if "edad" in respuestas:
-            try:
-                inicio, fin = map(int, respuestas["edad"].split("-"))
-                respuestas["edad"] = (inicio + fin) // 2
-            except:
-                respuestas["edad"] = 30
+# Resultado
+else:
+    respuestas = st.session_state.respuestas
 
-    # Procesar ingresos
-mapa_ingresos = {
+    # Convertir edad
+    if "edad" in respuestas:
+        try:
+            ini, fin = map(int, respuestas["edad"].split("-"))
+            respuestas["edad"] = (ini + fin) // 2
+        except:
+            respuestas["edad"] = 30
+
+    # Convertir ingreso
+    mapa_ingresos = {
         "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
-        "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
+        "4-6M": 5_000_000, "6-8M": 7_000_000,
+        "8-10M": 9_000_000, ">10M": 12_000_000
     }
-if "ingresos_mensuales" in respuestas:
-        respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
+    if "ingresos_mensuales" in respuestas:
+        respuestas["ingresos_mensuales"] = mapa_ingresos.get(
+            respuestas["ingresos_mensuales"], 3_000_000
+        )
 
-df_usuario = pd.DataFrame([respuestas])
-try:
+    # Predecir
+    df_usuario = pd.DataFrame([respuestas])
+    try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
-        st.success(f"\U00002705 Seguro recomendado: **{resultado}**")
-except Exception as e:
-        st.error(f"Error en la predicción: {e}")
+        st.success(f"✅ Seguro recomendado: **{resultado}**")
+    except Exception as e:
+        st.error(f"❌ Error en la predicción: {str(e)}")
 
-if st.button("Volver a comenzar"):
+    if st.button("🔁 Volver a comenzar"):
         st.session_state.indice = 0
         st.session_state.respuestas = {}
         st.rerun()
