@@ -58,7 +58,7 @@ st.markdown(
 
         /* Título */
         h1 {
-            color: #003366;
+            color: black;
             font-weight: 800;
         }
 
