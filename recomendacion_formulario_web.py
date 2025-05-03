@@ -66,9 +66,11 @@ st.markdown(
         }
 
         /* Texto de las preguntas */
-        h3 {
-            color: #003366;
+        h3, .stMarkdown h3 {
+            color: #003366 !important;
+            font-weight: 700;
         }
+
 
         /* Botones (cuadros de selección) */
         button[kind="secondary"] {
