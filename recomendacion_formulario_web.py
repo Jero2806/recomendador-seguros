@@ -53,12 +53,14 @@ st.markdown(
         .stApp {
             background-color: #cce6ff;
         }
-        h1 {
-            color: #003366;
+        h1, .stMarkdown h1 {
+            color: #003366 !important;
             font-weight: 800;
         }
-        h3 {
-            color: #003366;
+
+        h3, .stMarkdown h3 {
+            color: #003366 !important;
+            font-weight: 700;
         }
         .tarjeta-opcion {
             border: 2px solid #003366;
