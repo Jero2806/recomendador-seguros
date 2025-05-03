@@ -78,6 +78,15 @@ if st.button("Siguiente"):
                 respuestas["edad"] = (ini + fin) // 2
             except:
                 respuestas["edad"] = 30
+        
+        # Corregir ingresos
+        mapa_ingresos = {
+            "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
+            "4-6M": 5_000_000, "6-8M": 7_000_000,
+            "8-10M": 9_000_000, ">10M": 12_000_000
+        }
+        if "ingresos_mensuales" in respuestas:
+            respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
         df_usuario = pd.DataFrame([respuestas])
 
