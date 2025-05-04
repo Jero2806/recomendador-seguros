@@ -3,19 +3,17 @@ import pandas as pd
 import joblib
 import os
 
-# Cargar modelo y encoder
-modelo = joblib.load("modelo_regresion_logistica.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
-
-# Configurar estilo visual
+# ✅ Siempre debe ir primero
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 
-# Mostrar logo en la parte superior
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.image("static/logo_global.png", use_container_width=True)
+# Mostrar los dos logos centrados
+logo_cols = st.columns([1, 1, 1])
+with logo_cols[0]:
+    st.image("static/logo_global.png", use_column_width=True)
+with logo_cols[2]:
+    st.image("static/recomendacion.png", use_column_width=True)
 
-# Estilos CSS
+# Estilos visuales
 st.markdown("""
     <style>
         .stApp {
@@ -50,7 +48,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título principal
+# Título centrado debajo de los logos
 st.markdown("<h1 style='text-align:center;'>🛡 Encuentra tu seguro ideal</h1>", unsafe_allow_html=True)
 
 # Estado de sesión
