@@ -40,6 +40,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# ✅ TÍTULO PRINCIPAL VISIBLE
+st.title("🛡️ Encuentra tu seguro ideal")
+
 # Estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
