@@ -1,50 +1,55 @@
 import streamlit as st
 import pandas as pd
-import base64
-import os
 import joblib
+import os
 
-# Configurar estilo
-st.set_page_config(page_title="Recomendador de Seguros", layout="wide")
+# Cargar modelo y encoder
+modelo = joblib.load("modelo_regresion_logistica.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
+
+# Configuración visual
+st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.markdown("""
     <style>
-        .stApp {
-            background-color: #cce6ff;
-        }
-        h1, h3 {
-            color: #003366 !important;
-        }
+        .stApp { background-color: #cce6ff; }
+        h1, h3 { color: #003366 !important; }
         .tarjeta {
             border: 2px solid #003366;
             border-radius: 12px;
             background-color: white;
             padding: 10px;
             text-align: center;
-            cursor: pointer;
             transition: 0.2s;
         }
         .tarjeta:hover {
             background-color: #e6f0ff;
         }
-        .tarjeta-imagen {
-            width: 60px;
+        .tarjeta img {
+            width: 80px;
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .tarjeta-texto {
             font-weight: bold;
             color: #003366;
             font-size: 18px;
         }
+        .stButton > button {
+            border: none;
+            background: none;
+            width: 100%;
+            height: 100%;
+        }
+        .stProgress > div > div > div > div {
+            background-color: #005bbb;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# Cargar modelo
-modelo = joblib.load("modelo_regresion_logistica.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
-
-# Título
-st.markdown("<h1>🛡️ Encuentra tu seguro ideal</h1>", unsafe_allow_html=True)
+# Estado de navegación
+if "indice" not in st.session_state:
+    st.session_state.indice = 0
+    st.session_state.respuestas = {}
 
 
 PREGUNTAS = [
@@ -83,47 +88,56 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-if "indice" not in st.session_state:
-    st.session_state.indice = 0
-    st.session_state.respuestas = {}
+# Mostrar título principal
+st.title("🛡️ Encuentra tu seguro ideal")
 
+# Carpeta de imágenes
+IMAGENES_PATH = "static"
+
+# Flujo de preguntas
 indice = st.session_state.indice
 
 if indice < len(PREGUNTAS):
     clave, pregunta, opciones = PREGUNTAS[indice]
     st.markdown(f"### {pregunta}")
 
-    MAX_COLS = 4
-    filas = [opciones[i:i+MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
-
-    for fila in filas:
-        cols = st.columns(len(fila))
-        for i, op in enumerate(fila):
-            with cols[i]:
-                ruta_img = f"static/icon_{op.lower().replace(' ', '_')}.png"
-                img_b64 = ""
-                if os.path.exists(ruta_img):
-                    with open(ruta_img, "rb") as f:
-                        img_bytes = f.read()
-                        img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-
-                if st.button(op, key=f"{clave}_{op}"):
+    cols = st.columns(len(opciones))
+    for i, op in enumerate(opciones):
+        nombre_archivo = f"icon_{op.lower().replace(' ', '_')}.png"
+        ruta = os.path.join(IMAGENES_PATH, nombre_archivo)
+        with cols[i]:
+            if os.path.exists(ruta):
+                if st.button(f"""
+                    <div class='tarjeta'>
+                        <img src='data:image/png;base64,{st.image(ruta, use_container_width=True)}' />
+                        <div class='tarjeta-texto'>{op}</div>
+                    </div>
+                """, key=f"{clave}_{op}", unsafe_allow_html=True):
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
+            else:
+                if st.button(f"""
+                    <div class='tarjeta'>
+                        <div class='tarjeta-texto'>{op}</div>
+                    </div>
+                """, key=f"{clave}_{op}", unsafe_allow_html=True):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
                     st.rerun()
 
-                st.markdown(f"""
-                    <div class="tarjeta">
-                        <img src="data:image/png;base64,{img_b64}" class="tarjeta-imagen" />
-                        <div class="tarjeta-texto">{op}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
     st.progress(indice / len(PREGUNTAS))
 
 else:
-    df_usuario = pd.DataFrame([st.session_state.respuestas])
-    st.write("Tus respuestas:", df_usuario)
+    respuestas = st.session_state.respuestas
+    if "edad" in respuestas:
+        try:
+            ini, fin = map(int, respuestas["edad"].split("-"))
+            respuestas["edad"] = (ini + fin) // 2
+        except:
+            respuestas["edad"] = 30
+
+    df_usuario = pd.DataFrame([respuestas])
 
     try:
         pred = modelo.predict(df_usuario)
