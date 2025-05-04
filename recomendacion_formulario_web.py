@@ -7,38 +7,52 @@ import os
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Configuración visual
+# Configurar página
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+
+# Estilos
 st.markdown("""
     <style>
         .stApp { background-color: #cce6ff; }
-        h1, h3 { color: #003366 !important; }
+        h1, h3 { color: #003366; }
+        .titulo-principal {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .titulo-principal img {
+            width: 40px;
+            height: 40px;
+        }
         .tarjeta {
             border: 2px solid #003366;
             border-radius: 12px;
-            background-color: white;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
             transition: 0.2s;
+            background-color: white;
+            cursor: pointer;
+            height: 180px;
         }
         .tarjeta:hover {
             background-color: #e6f0ff;
         }
         .tarjeta img {
-            width: 80px;
-            height: auto;
-            margin-bottom: 8px;
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
         }
         .tarjeta-texto {
             font-weight: bold;
             color: #003366;
-            font-size: 18px;
+            font-size: 16px;
         }
-        .stButton > button {
-            border: none;
-            background: none;
+        .stButton>button {
             width: 100%;
             height: 100%;
+            background: none;
+            border: none;
         }
         .stProgress > div > div > div > div {
             background-color: #005bbb;
@@ -46,10 +60,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Estado de navegación
+# Título con ícono
+st.markdown("""
+    <div class="titulo-principal">
+        <img src="https://cdn-icons-png.flaticon.com/512/942/942748.png" />
+        <h1>Encuentra tu seguro ideal</h1>
+    </div>
+""", unsafe_allow_html=True)
+
+# Estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
+
 
 
 PREGUNTAS = [
@@ -88,13 +111,7 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Mostrar título principal
-st.title("🛡️ Encuentra tu seguro ideal")
-
-# Carpeta de imágenes
-IMAGENES_PATH = "static"
-
-# Flujo de preguntas
+# Mostrar formulario paso a paso
 indice = st.session_state.indice
 
 if indice < len(PREGUNTAS):
@@ -103,33 +120,25 @@ if indice < len(PREGUNTAS):
 
     cols = st.columns(len(opciones))
     for i, op in enumerate(opciones):
-        nombre_archivo = f"icon_{op.lower().replace(' ', '_')}.png"
-        ruta = os.path.join(IMAGENES_PATH, nombre_archivo)
         with cols[i]:
-            if os.path.exists(ruta):
-                if st.button(f"""
-                    <div class='tarjeta'>
-                        <img src='data:image/png;base64,{st.image(ruta, use_container_width=True)}' />
-                        <div class='tarjeta-texto'>{op}</div>
-                    </div>
-                """, key=f"{clave}_{op}", unsafe_allow_html=True):
-                    st.session_state.respuestas[clave] = op
-                    st.session_state.indice += 1
-                    st.rerun()
-            else:
-                if st.button(f"""
-                    <div class='tarjeta'>
-                        <div class='tarjeta-texto'>{op}</div>
-                    </div>
-                """, key=f"{clave}_{op}", unsafe_allow_html=True):
-                    st.session_state.respuestas[clave] = op
-                    st.session_state.indice += 1
-                    st.rerun()
+            ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
+            boton_html = f"""
+                <div class="tarjeta">
+                    {'<img src="{}">'.format(ruta) if os.path.exists(ruta) else ''}
+                    <div class="tarjeta-texto">{op}</div>
+                </div>
+            """
+            if st.button(label=f"", key=f"{clave}_{op}"):
+                st.session_state.respuestas[clave] = op
+                st.session_state.indice += 1
+                st.rerun()
+            st.markdown(boton_html, unsafe_allow_html=True)
 
-    st.progress(indice / len(PREGUNTAS))
+    st.progress((indice + 1) / len(PREGUNTAS))
 
 else:
     respuestas = st.session_state.respuestas
+
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
@@ -137,8 +146,14 @@ else:
         except:
             respuestas["edad"] = 30
 
-    df_usuario = pd.DataFrame([respuestas])
+    mapa_ingresos = {
+        "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
+        "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
+    }
+    if "ingresos_mensuales" in respuestas:
+        respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
+    df_usuario = pd.DataFrame([respuestas])
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
