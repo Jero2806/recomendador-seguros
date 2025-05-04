@@ -1,40 +1,34 @@
+
 import streamlit as st
 import pandas as pd
 import joblib
 import os
 
-# ✅ Esto debe ir siempre como primer comando de Streamlit
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
-
-# Cargar modelo y encoder
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Mostrar los logos en la parte superior
-col1, col2, col3 = st.columns([1, 2, 1])
-with col1:
-    st.image("static/logo_global.png", use_container_width=True)
-with col2:
-    st.image("static/recomendacion.png", use_container_width=True)
-
-# Estilos CSS
 st.markdown("""
     <style>
-        .stApp {
-            background-color: #cce6ff;
-        }
-        h1, h3 {
-            color: #003366 !important;
-        }
-        .titulo-principal {
+        .header-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 10px;
         }
-        .titulo-principal img {
-            width: 40px;
-            height: 40px;
+        .header-row img {
+            height: 60px;
+        }
+        .titulo-principal {
+            text-align: center;
+            color: #003366;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .stApp {
+            background-color: #cce6ff;
         }
         .stButton > button {
             background-color: #003366;
@@ -53,22 +47,19 @@ st.markdown("""
             background-color: #005bbb;
         }
     </style>
-""", unsafe_allow_html=True)
 
-# Título principal
-st.markdown("""
-    <div class="titulo-principal">
-        <img src="https://cdn-icons-png.flaticon.com/512/942/942748.png" />
-        <h1>Encuentra tu seguro ideal</h1>
+    <div class="header-row">
+        <img src="https://cdn-icons-png.flaticon.com/512/1047/1047711.png" />
+        <img src="static/recomendacion.png" />
+        <img src="static/logo_global.png" />
     </div>
+    <div class="titulo-principal">Encuentra tu seguro ideal</div>
 """, unsafe_allow_html=True)
 
-# Estado inicial
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
 
-# Lista de preguntas
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -105,7 +96,6 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-# Mostrar preguntas una por una
 indice = st.session_state.indice
 
 if indice < len(PREGUNTAS):
@@ -126,13 +116,9 @@ if indice < len(PREGUNTAS):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
                     st.rerun()
-
     st.progress(indice / len(PREGUNTAS))
-
-# Mostrar resultado final
 else:
     respuestas = st.session_state.respuestas
-
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
@@ -148,7 +134,6 @@ else:
         respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
-
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
