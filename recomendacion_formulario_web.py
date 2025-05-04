@@ -3,6 +3,11 @@ import pandas as pd
 import joblib
 import os
 
+# Cargar modelo y encoder
+modelo = joblib.load("modelo_regresion_logistica.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
+
+
 # ✅ Siempre debe ir primero
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 
