@@ -105,7 +105,7 @@ if indice < len(PREGUNTAS):
             with cols[i]:
                 ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
                 if os.path.exists(ruta):
-                    st.image(ruta, use_column_width=True)
+                    st.image(ruta, use_container_width=True)  # ✅ Línea corregida
                 if st.button(op, key=f"{clave}_{op}"):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
