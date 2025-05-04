@@ -9,6 +9,13 @@ label_encoder = joblib.load("label_encoder.pkl")
 
 # Configurar estilo visual
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+
+# Mostrar logo en la parte superior
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("static/logo_global.png", use_container_width=True)
+
+# Estilos CSS
 st.markdown("""
     <style>
         .stApp {
