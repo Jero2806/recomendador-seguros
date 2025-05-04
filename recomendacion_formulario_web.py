@@ -6,12 +6,11 @@ import os
 # ✅ Siempre debe ir primero
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 
-# Mostrar los dos logos centrados
 logo_cols = st.columns([1, 1, 1])
 with logo_cols[0]:
-    st.image("static/logo_global.png", use_column_width=True)
+    st.image("static/logo_global.png", use_container_width=True)
 with logo_cols[2]:
-    st.image("static/recomendacion.png", use_column_width=True)
+    st.image("static/recomendacion.png", use_container_width=True)
 
 # Estilos visuales
 st.markdown("""
