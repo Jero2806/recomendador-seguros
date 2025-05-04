@@ -7,7 +7,7 @@ import os
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Configurar estilo
+# Configurar estilo visual
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.markdown("""
     <style>
@@ -23,16 +23,19 @@ st.markdown("""
             margin-bottom: 5px;
         }
         .stButton > button {
-            background-color: #ffffff;
-            color: #003366;
-            border: 2px solid #003366;
+            background-color: #003366;
+            color: white;
+            border: none;
             border-radius: 12px;
             font-weight: bold;
+            font-size: 20px;
+            padding: 10px;
             width: 100%;
             height: 100%;
+            text-align: center;
         }
         .stButton > button:hover {
-            background-color: #e6f0ff;
+            background-color: #005bbb;
         }
         .stProgress > div > div > div > div {
             background-color: #005bbb;
@@ -40,15 +43,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ✅ TÍTULO PRINCIPAL VISIBLE
-st.title("🛡️ Encuentra tu seguro ideal")
+# Título principal
+st.markdown("<h1 style='text-align:center;'>🛡️ Encuentra tu seguro ideal</h1>", unsafe_allow_html=True)
 
-# Estado
+# Estado de sesión
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
 
-# Preguntas
+# Lista de preguntas
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -85,34 +88,43 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
+# Mostrar pregunta actual
 indice = st.session_state.indice
 
 if indice < len(PREGUNTAS):
     clave, pregunta, opciones = PREGUNTAS[indice]
     st.markdown(f"### {pregunta}")
-    cols = st.columns(len(opciones))
-    for i, op in enumerate(opciones):
-        with cols[i]:
-            ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
-            if os.path.exists(ruta):
-                st.image(ruta, use_column_width=True)
-            with st.form(key=f"form_{clave}_{op}"):
-                submitted = st.form_submit_button(op)
-                if submitted:
+
+    # Agrupar opciones en filas de máximo 5
+    MAX_COLS = 5
+    filas = [opciones[i:i + MAX_COLS] for i in range(0, len(opciones), MAX_COLS)]
+
+    for fila in filas:
+        cols = st.columns(len(fila))
+        for i, op in enumerate(fila):
+            with cols[i]:
+                ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
+                if os.path.exists(ruta):
+                    st.image(ruta, use_column_width=True)
+                if st.button(op, key=f"{clave}_{op}"):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
                     st.rerun()
 
+    # Barra de progreso
     st.progress(indice / len(PREGUNTAS))
 
+# Mostrar resultado final
 else:
     respuestas = st.session_state.respuestas
+
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
             respuestas["edad"] = (ini + fin) // 2
         except:
             respuestas["edad"] = 30
+
     mapa_ingresos = {
         "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
         "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
@@ -121,6 +133,7 @@ else:
         respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
+
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
