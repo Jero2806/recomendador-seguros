@@ -1,26 +1,23 @@
-
 import streamlit as st
 import pandas as pd
 import joblib
 import os
 
-# 🔹 Esto DEBE ir primero
+# ✅ Esto debe ir siempre como primer comando de Streamlit
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 
 # Cargar modelo y encoder
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# 🔹 Mostrar los logos en la parte superior
+# Mostrar los logos en la parte superior
 col1, col2, col3 = st.columns([1, 2, 1])
 with col1:
     st.image("static/logo_global.png", use_container_width=True)
 with col2:
     st.image("static/recomendacion.png", use_container_width=True)
 
-
-# Configurar estilo y página
-st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
+# Estilos CSS
 st.markdown("""
     <style>
         .stApp {
@@ -38,11 +35,6 @@ st.markdown("""
         .titulo-principal img {
             width: 40px;
             height: 40px;
-        }
-        .tarjeta-imagen {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 5px;
         }
         .stButton > button {
             background-color: #003366;
@@ -63,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título con ícono
+# Título principal
 st.markdown("""
     <div class="titulo-principal">
         <img src="https://cdn-icons-png.flaticon.com/512/942/942748.png" />
@@ -71,7 +63,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Estado
+# Estado inicial
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
@@ -113,7 +105,7 @@ PREGUNTAS = [
     ("lee_sobre_finanzas", "¿Lees sobre temas financieros?", ["Sí", "No"]),
 ]
 
-
+# Mostrar preguntas una por una
 indice = st.session_state.indice
 
 if indice < len(PREGUNTAS):
@@ -124,16 +116,23 @@ if indice < len(PREGUNTAS):
         with cols[i]:
             ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
             if os.path.exists(ruta):
+                if st.button(f"🖼️ {op}", key=f"{clave}_{op}"):
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
                 st.image(ruta, use_container_width=True)
-            if st.button(op, key=f"{clave}_{op}"):
-                st.session_state.respuestas[clave] = op
-                st.session_state.indice += 1
-                st.rerun()
+            else:
+                if st.button(op, key=f"{clave}_{op}"):
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
 
     st.progress(indice / len(PREGUNTAS))
 
+# Mostrar resultado final
 else:
     respuestas = st.session_state.respuestas
+
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
@@ -149,6 +148,7 @@ else:
         respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
+
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
