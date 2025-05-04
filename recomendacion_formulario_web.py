@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import os
 
 # Cargar modelo y encoder
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-# Configurar estilo
+# Estilos y configuración
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.markdown("""
     <style>
@@ -17,28 +16,27 @@ st.markdown("""
         h1, h3 {
             color: #003366 !important;
         }
-        .tarjeta-imagen {
-            width: 50px;
-            height: auto;
-            margin-bottom: 5px;
-        }
-        .stButton > button {
-            background-color: #ffffff;
-            color: #003366;
+        .tarjeta {
             border: 2px solid #003366;
             border-radius: 12px;
+            background-color: white;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
             font-weight: bold;
-            width: 100%;
-            height: 100%;
         }
-        .stButton > button:hover {
+        .tarjeta:hover {
             background-color: #e6f0ff;
         }
-        .stProgress > div > div > div > div {
-            background-color: #005bbb;
+        .tarjeta-seleccionada {
+            background-color: #005bbb !important;
+            color: white !important;
         }
     </style>
 """, unsafe_allow_html=True)
+
+st.title("🛡️ Encuentra tu seguro ideal")
 
 # Estado
 if "indice" not in st.session_state:
@@ -90,16 +88,13 @@ if indice < len(PREGUNTAS):
     cols = st.columns(len(opciones))
     for i, op in enumerate(opciones):
         with cols[i]:
-            ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
-            if os.path.exists(ruta):
-                st.image(ruta, use_column_width=True)
-            with st.form(key=f"form_{clave}_{op}"):
-                submitted = st.form_submit_button(op)
-                if submitted:
-                    st.session_state.respuestas[clave] = op
-                    st.session_state.indice += 1
-                    st.rerun()
-
+            if st.button(op, key=f"{clave}_{op}"):
+                st.session_state.respuestas[clave] = op
+                st.session_state.indice += 1
+                st.rerun()
+            seleccionado = st.session_state.respuestas.get(clave) == op
+            clase = "tarjeta tarjeta-seleccionada" if seleccionado else "tarjeta"
+            st.markdown(f"<div class='{clase}'>{op}</div>", unsafe_allow_html=True)
     st.progress(indice / len(PREGUNTAS))
 
 else:
@@ -110,12 +105,13 @@ else:
             respuestas["edad"] = (ini + fin) // 2
         except:
             respuestas["edad"] = 30
-    mapa_ingresos = {
+
+    ingresos_map = {
         "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
         "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
     }
     if "ingresos_mensuales" in respuestas:
-        respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
+        respuestas["ingresos_mensuales"] = ingresos_map.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
     try:
