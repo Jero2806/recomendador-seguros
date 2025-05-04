@@ -8,6 +8,12 @@ import os
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
+col1, col2, col3 = st.columns([1, 2, 1])
+with col1:
+    st.image("static/logo_global.png", use_column_width=True)
+with col2:
+    st.image("static/recomendacion.png", use_column_width=True)
+
 # Configurar estilo y página
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 st.markdown("""
