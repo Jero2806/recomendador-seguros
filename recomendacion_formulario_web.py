@@ -1,18 +1,11 @@
-
 import streamlit as st
 import pandas as pd
 import joblib
 import os
-import base64
 
 # Cargar modelo y encoder
 modelo = joblib.load("modelo_regresion_logistica.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
-
-# Codificar imagen a base64
-def imagen_base64(path):
-    with open(path, "rb") as img_file:
-        return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
 
 # Configurar estilo
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
@@ -21,34 +14,25 @@ st.markdown("""
         .stApp {
             background-color: #cce6ff;
         }
-        h1 {
+        h1, h3 {
             color: #003366 !important;
-        }
-        h3 {
-            color: #003366 !important;
-        }
-        .tarjeta-opcion {
-            border: 2px solid #003366;
-            border-radius: 12px;
-            background-color: white;
-            padding: 10px;
-            text-align: center;
-            transition: 0.2s;
-            height: 130px;
-        }
-        .tarjeta-opcion:hover {
-            background-color: #e6f0ff;
         }
         .tarjeta-imagen {
-            width: 40px;
+            width: 50px;
             height: auto;
             margin-bottom: 5px;
         }
         .stButton > button {
-            background: none;
-            border: none;
-            padding: 0;
+            background-color: #ffffff;
+            color: #003366;
+            border: 2px solid #003366;
+            border-radius: 12px;
+            font-weight: bold;
             width: 100%;
+            height: 100%;
+        }
+        .stButton > button:hover {
+            background-color: #e6f0ff;
         }
         .stProgress > div > div > div > div {
             background-color: #005bbb;
@@ -56,13 +40,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🛡️ Encuentra tu seguro ideal")
-
 # Estado
 if "indice" not in st.session_state:
     st.session_state.indice = 0
     st.session_state.respuestas = {}
 
+# Preguntas
 PREGUNTAS = [
     ("edad", "Selecciona tu rango de edad:", ["18-21", "22-25", "26-29", "30-33", "34-37", "38-41", "42-45", "46-49", "50-53", "54-57", "58-61", "62-65", "66-70"]),
     ("genero", "Selecciona tu género:", ["Masculino", "Femenino"]),
@@ -107,32 +90,26 @@ if indice < len(PREGUNTAS):
     cols = st.columns(len(opciones))
     for i, op in enumerate(opciones):
         with cols[i]:
-            img_path = f"static/icon_{op.lower().replace(' ', '_')}.png"
-            img_b64 = imagen_base64(img_path) if os.path.exists(img_path) else ""
-            html = f"""
-            <div class="tarjeta-opcion">
-                <img src="{img_b64}" class="tarjeta-imagen"/>
-                <div style='color:#003366; font-weight:bold'>{op}</div>
-            </div>
-            """
-            if st.button(label="", key=f"{clave}_{op}"):
-                st.session_state.respuestas[clave] = op
-                st.session_state.indice += 1
-                st.rerun()
-            st.markdown(html, unsafe_allow_html=True)
+            ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
+            if os.path.exists(ruta):
+                st.image(ruta, use_column_width=True)
+            with st.form(key=f"form_{clave}_{op}"):
+                submitted = st.form_submit_button(op)
+                if submitted:
+                    st.session_state.respuestas[clave] = op
+                    st.session_state.indice += 1
+                    st.rerun()
 
     st.progress(indice / len(PREGUNTAS))
 
 else:
     respuestas = st.session_state.respuestas
-
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
             respuestas["edad"] = (ini + fin) // 2
         except:
             respuestas["edad"] = 30
-
     mapa_ingresos = {
         "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
         "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
@@ -141,7 +118,6 @@ else:
         respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
     df_usuario = pd.DataFrame([respuestas])
-
     try:
         pred = modelo.predict(df_usuario)
         resultado = label_encoder.inverse_transform(pred)[0]
