@@ -7,7 +7,6 @@ import os
 modelo = joblib.load("modelo_xgboost.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-
 # ✅ Siempre debe ir primero
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
 
@@ -114,7 +113,7 @@ if indice < len(PREGUNTAS):
             with cols[i]:
                 ruta = f"static/icon_{op.lower().replace(' ', '_')}.png"
                 if os.path.exists(ruta):
-                    st.image(ruta, use_container_width=True)  # ✅ Línea corregida
+                    st.image(ruta, use_container_width=True)
                 if st.button(op, key=f"{clave}_{op}"):
                     st.session_state.respuestas[clave] = op
                     st.session_state.indice += 1
@@ -127,6 +126,7 @@ if indice < len(PREGUNTAS):
 else:
     respuestas = st.session_state.respuestas
 
+    # Mapeo para transformar edad a un valor medio
     if "edad" in respuestas:
         try:
             ini, fin = map(int, respuestas["edad"].split("-"))
@@ -134,6 +134,7 @@ else:
         except:
             respuestas["edad"] = 30
 
+    # Mapeo para los ingresos
     mapa_ingresos = {
         "<1M": 500_000, "1-2M": 1_500_000, "2-4M": 3_000_000,
         "4-6M": 5_000_000, "6-8M": 7_000_000, "8-10M": 9_000_000, ">10M": 12_000_000
@@ -141,6 +142,13 @@ else:
     if "ingresos_mensuales" in respuestas:
         respuestas["ingresos_mensuales"] = mapa_ingresos.get(respuestas["ingresos_mensuales"], 3_000_000)
 
+    # 🔴 Verificación de columnas faltantes
+    columnas_necesarias = ["preferencia_ahorro"]
+    for columna in columnas_necesarias:
+        if columna not in respuestas:
+            respuestas[columna] = "Media"
+
+    # Crear el DataFrame para predecir
     df_usuario = pd.DataFrame([respuestas])
 
     try:
