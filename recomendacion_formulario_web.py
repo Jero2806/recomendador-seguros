@@ -5,7 +5,7 @@ import os
 
 # Cargar modelo y encoder
 modelo = joblib.load("modelo_xgboost.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
+label_encoder = joblib.load("label_encoder_xgb.pkl")
 
 # ✅ Siempre debe ir primero
 st.set_page_config(page_title="Recomendador de Seguros", layout="centered")
