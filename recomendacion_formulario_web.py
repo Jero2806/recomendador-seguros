@@ -4,7 +4,7 @@ import joblib
 import os
 
 # Cargar modelo y encoder
-modelo = joblib.load("modelo_regresion_logistica.pkl")
+modelo = joblib.load("modelo_xgboost.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
 
